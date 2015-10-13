@@ -7,7 +7,7 @@
     stdlib
    ]},
   {env,[]},
-  {modules, []},
+  {modules, [crypto]},
 
   {contributors, []},
   {licenses, []},
