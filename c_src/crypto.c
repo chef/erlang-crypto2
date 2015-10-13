@@ -57,16 +57,21 @@ static ERL_NIF_TERM sha256_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv
     return ret;
 }
 
-static erl_evp_md_ctx_t* evp_md_init(const EVP_MD* md) {
+static ERL_NIF_TERM evp_md_init(ErlNifEnv* env, const EVP_MD* md) {
+    ERL_NIF_TERM term;
     erl_evp_md_ctx_t* erl_md_ctx = (erl_evp_md_ctx_t*)enif_alloc_resource(
             erlrt_evp_md_ctx, sizeof(erl_evp_md_ctx_t));
+
+    term = enif_make_resource(env, erl_md_ctx);
+    enif_release_resource(erl_md_ctx);
+
     erl_md_ctx->ctx = EVP_MD_CTX_create();
 
     if(!EVP_DigestInit_ex(erl_md_ctx->ctx, md, NULL)) {
         return atom_error;
     }
 
-    return erl_md_ctx;
+    return term;
 }
 
 static void evp_md_destructor(ErlNifEnv* env, erl_evp_md_ctx_t* obj) {
