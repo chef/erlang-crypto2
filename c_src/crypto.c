@@ -5,7 +5,16 @@
 
 static ERL_NIF_TERM atom_error;
 
+
+// ------ erlrt_evp_md_ctx ------
+//  This will be the nif resource type for
+//  erl_evp_md_ctx.
 static ErlNifResourceType* erlrt_evp_md_ctx;
+
+typedef struct erl_evp_md_ctx {
+    EVP_MD_CTX* ctx;
+} erl_evp_md_ctx_t;
+// ------------------------------
 
 static ERL_NIF_TERM sha256_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]);
 
@@ -46,6 +55,18 @@ static ERL_NIF_TERM sha256_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv
     EVP_MD_CTX_destroy(ctx);
 
     return ret;
+}
+
+static erl_evp_md_ctx_t* evp_md_init(const EVP_MD* md) {
+    erl_evp_md_ctx_t* erl_md_ctx = (erl_evp_md_ctx_t*)enif_alloc_resource(
+            erlrt_evp_md_ctx, sizeof(erl_evp_md_ctx_t));
+    erl_md_ctx->ctx = EVP_MD_CTX_create();
+
+    if(!EVP_DigestInit_ex(erl_md_ctx->ctx, md, NULL)) {
+        return atom_error;
+    }
+
+    return erl_md_ctx;
 }
 
 static void evp_md_destructor(ErlNifEnv* env, void* obj) {
