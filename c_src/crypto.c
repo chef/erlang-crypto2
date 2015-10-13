@@ -87,7 +87,7 @@ static int init(ErlNifEnv* env, ERL_NIF_TERM load_info) {
     erlrt_evp_md_ctx = enif_open_resource_type(
             env, "crypto2",
             "erlrt_evp_md_ctx",
-            (ErlNifResourceDtor)evp_md_destructor,
+            (ErlNifResourceDtor*)evp_md_destructor,
             ERL_NIF_RT_CREATE,
             NULL);
 
