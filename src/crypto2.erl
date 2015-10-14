@@ -6,7 +6,7 @@
 
 %% API exports
 -export([
-         sha256_init/0,
+         hash_init/1,
          hash_update/2,
          hash_final/1
         ]).
@@ -15,7 +15,9 @@
 %% API functions
 %%====================================================================
 
-sha256_init() -> "Undefined".
+hash_init(sha256) ->
+    sha256_init().
+
 hash_update(_Context, _Data) -> "Undefined".
 hash_final(_Context) -> "Undefined".
 
@@ -36,3 +38,5 @@ on_load() ->
     _ ->
       {error, "Could not find library"}
   end.
+
+sha256_init() -> "Undefined".
