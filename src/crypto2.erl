@@ -6,7 +6,6 @@
 
 %% API exports
 -export([
-         sha256/1,
          sha256_init/0,
          hash_update/2,
          hash_final/1
@@ -15,9 +14,6 @@
 %%====================================================================
 %% API functions
 %%====================================================================
-
-sha256(String) ->
-  sha256_nif(list_to_binary(String)).
 
 sha256_init() -> "Undefined".
 hash_update(_Context, _Data) -> "Undefined".
@@ -32,8 +28,6 @@ hash_final(_Context) -> "Undefined".
     %Path when is_list(Path) ->
       %erlang:load_nif(filename:join(Path, "crypto2"));
   %end.
-
-sha256_nif(_Data) -> "Undefined".
 
 on_load() ->
   case code:priv_dir(crypto2) of

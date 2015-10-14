@@ -16,7 +16,6 @@ typedef struct erl_evp_md_ctx {
 } erl_evp_md_ctx_t;
 // ------------------------------
 
-static ERL_NIF_TERM sha256_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]);
 static ERL_NIF_TERM sha256_init(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]);
 static ERL_NIF_TERM hash_update(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]);
 static ERL_NIF_TERM hash_final(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]);
@@ -28,46 +27,10 @@ static ERL_NIF_TERM evp_md_update(ErlNifEnv* env, erl_evp_md_ctx_t* erl_md_ctx,
 static ERL_NIF_TERM evp_md_final(ErlNifEnv* env, erl_evp_md_ctx_t* erl_md_ctx);
 
 static ErlNifFunc nif_funcs[] = {
-    {"sha256_nif", 1, sha256_nif},
     {"sha256_init", 0, sha256_init},
     {"hash_update", 2, hash_update},
     {"hash_final", 1, hash_final},
 };
-
-/*
- * sha256(iodata()) -> binary().
- */
-static ERL_NIF_TERM sha256_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
-{
-    ErlNifBinary ibin;
-    ERL_NIF_TERM ret;
-    EVP_MD_CTX* ctx;
-    const EVP_MD* md;
-
-    if (!enif_inspect_iolist_as_binary(env, argv[0], &ibin)) {
-        return enif_make_badarg(env);
-    }
-
-    md = EVP_sha256();
-    ctx = EVP_MD_CTX_create();
-
-    if(!EVP_DigestInit_ex(ctx, md, NULL)) {
-        return atom_error;
-    }
-
-    if(!EVP_DigestUpdate(ctx, ibin.data, ibin.size)) {
-        return atom_error;
-    }
-
-    if(!EVP_DigestFinal_ex(
-                ctx, enif_make_new_binary(env, EVP_MD_size(md), &ret), NULL)) {
-        return atom_error;
-    }
-
-    EVP_MD_CTX_destroy(ctx);
-
-    return ret;
-}
 
 static ERL_NIF_TERM sha256_init(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
