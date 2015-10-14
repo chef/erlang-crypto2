@@ -151,12 +151,22 @@ static ERL_NIF_TERM evp_md_update(ErlNifEnv* env, erl_evp_md_ctx_t* erl_md_ctx,
 static ERL_NIF_TERM evp_md_final(ErlNifEnv* env, erl_evp_md_ctx_t* erl_md_ctx)
 {
     ERL_NIF_TERM ret;
-    if(!EVP_DigestFinal_ex(
-                erl_md_ctx->ctx,
-                enif_make_new_binary(env, EVP_MD_CTX_size(erl_md_ctx->ctx),
-                    &ret), NULL)) {
+    EVP_MD_CTX* ctx;
+
+    // Make a copy so we do not change the context
+    ctx = EVP_MD_CTX_create();
+    if(!EVP_MD_CTX_copy_ex(ctx, erl_md_ctx->ctx)) {
         return atom_error;
     }
+
+    if(!EVP_DigestFinal_ex(
+                ctx,
+                enif_make_new_binary(env, EVP_MD_CTX_size(ctx), &ret), NULL)) {
+        ret = atom_error;
+    }
+
+    EVP_MD_CTX_destroy(ctx);
+
     return ret;
 }
 
