@@ -25,12 +25,6 @@ hash_final(_Context) -> "Undefined".
 %% Internal functions
 %%====================================================================
 
-%on_load() ->
-  %case code:priv_dir(crypto2) of
-    %Path when is_list(Path) ->
-      %erlang:load_nif(filename:join(Path, "crypto2"));
-  %end.
-
 on_load() ->
   case code:priv_dir(crypto2) of
     Path when is_list(Path) ->
