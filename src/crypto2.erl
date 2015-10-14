@@ -6,7 +6,10 @@
 
 %% API exports
 -export([
-         sha256/1
+         sha256/1,
+         sha256_init/0,
+         hash_update/2,
+         hash_final/1
         ]).
 
 %%====================================================================
@@ -15,6 +18,10 @@
 
 sha256(String) ->
   sha256_nif(list_to_binary(String)).
+
+sha256_init() -> "Undefined".
+hash_update(_Context, _Data) -> "Undefined".
+hash_final(_Context) -> "Undefined".
 
 %%====================================================================
 %% Internal functions
