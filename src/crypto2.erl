@@ -6,6 +6,7 @@
 
 %% API exports
 -export([
+         hash/2,
          hash_init/1,
          hash_update/2,
          hash_final/1
@@ -14,6 +15,10 @@
 %%====================================================================
 %% API functions
 %%====================================================================
+
+hash(Type, Data) ->
+    Context = hash_update(hash_init(Type), Data),
+    hash_final(Context).
 
 hash_init(sha256) ->
     sha256_init().

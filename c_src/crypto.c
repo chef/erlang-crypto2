@@ -96,7 +96,7 @@ static ERL_NIF_TERM evp_md_update(ErlNifEnv* env, erl_evp_md_ctx_t* erl_md_ctx,
             erlrt_evp_md_ctx, sizeof(erl_evp_md_ctx_t));
 
     term = enif_make_resource(env, new_erl_md_ctx);
-    enif_release_resource(erl_md_ctx);
+    enif_release_resource(new_erl_md_ctx);
 
     new_erl_md_ctx->ctx = EVP_MD_CTX_create();
 
