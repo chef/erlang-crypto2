@@ -21,7 +21,9 @@ hash(Type, Data) ->
     hash_final(Context).
 
 hash_init(sha256) ->
-    sha256_init().
+    sha256_init();
+hash_init(sha512) ->
+    sha512_init().
 
 hash_update(_Context, _Data) -> "Undefined".
 hash_final(_Context) -> "Undefined".
@@ -39,3 +41,4 @@ on_load() ->
   end.
 
 sha256_init() -> "Undefined".
+sha512_init() -> "Undefined".

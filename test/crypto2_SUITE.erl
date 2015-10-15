@@ -22,9 +22,13 @@
 -include_lib("common_test/include/ct.hrl").
 -compile(export_all).
 
-all() -> [{group, sha256}].
+all() -> [{group, sha256},
+          {group, sha512}
+         ].
 
-groups() -> [{sha256, [], [hash]}].
+groups() -> [{sha256, [], [hash]},
+             {sha512, [], [hash]}
+            ].
 
 hash() ->
     [{doc, "Test all different hash functions"}].
@@ -66,6 +70,10 @@ end_per_testcase(_Name,Config) ->
 group_config(sha256 = Type, Config) ->
     Msgs =   [rfc_4634_test1(), rfc_4634_test2_1()],
     Digests = rfc_4634_sha256_digests(),
+    [{hash, {Type, Msgs, Digests}} | Config];
+group_config(sha512 = Type, Config) ->
+    Msgs =  [rfc_4634_test1(), rfc_4634_test2()],
+    Digests = rfc_4634_sha512_digests(),
     [{hash, {Type, Msgs, Digests}} | Config].
 %%--------------------------------------------------------------------
 hexstr2bin(S) ->
@@ -133,6 +141,14 @@ rfc_4634_test1() ->
     <<"abc">>.
 rfc_4634_test2_1() ->
     <<"abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq">>.
+rfc_4634_test2_2a() ->
+    <<"abcdefghbcdefghicdefghijdefghijkefghijklfghijklmghijklmn">>.
+rfc_4634_test2_2b() ->
+    <<"hijklmnoijklmnopjklmnopqklmnopqrlmnopqrsmnopqrstnopqrstu">>.
+rfc_4634_test2() ->
+    A2 =rfc_4634_test2_2a(),
+    B2 = rfc_4634_test2_2b(),
+    <<A2/binary, B2/binary>>.
 
 rfc_4634_sha256_digests() ->
     [
@@ -141,3 +157,9 @@ rfc_4634_sha256_digests() ->
      hexstr2bin("248D6A61D20638B8"
 		"E5C026930C3E6039A33CE45964FF2167F6ECEDD419DB06C1")
     ].
+
+rfc_4634_sha512_digests() ->
+    [hexstr2bin("DDAF35A193617ABACC417349AE20413112E6FA4E89A97EA2"
+		"0A9EEEE64B55D39A2192992A274FC1A836BA3C23A3FEEBBD"
+		"454D4423643CE80E2A9AC94FA54CA49F"),
+     hexstr2bin("8E959B75DAE313DA8CF4F72814FC143F8F7779C6EB9F7FA17299AEADB6889018501D289E4900F7E4331B99DEC4B5433AC7D329EEB6DD26545E96E55B874BE909")].
