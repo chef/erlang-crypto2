@@ -22,11 +22,13 @@
 -include_lib("common_test/include/ct.hrl").
 -compile(export_all).
 
-all() -> [{group, sha256},
+all() -> [{group, sha},
+          {group, sha256},
           {group, sha512}
          ].
 
-groups() -> [{sha256, [], [hash]},
+groups() -> [{sha, [], [hash]},
+             {sha256, [], [hash]},
              {sha512, [], [hash]}
             ].
 
@@ -67,6 +69,10 @@ end_per_testcase(info, Config) ->
 end_per_testcase(_Name,Config) ->
     Config.
 
+group_config(sha = Type, Config) ->
+    Msgs = [rfc_4634_test1(), rfc_4634_test2_1(),long_msg()],
+    Digests = rfc_4634_sha_digests() ++ [long_sha_digest()],
+    [{hash, {Type, Msgs, Digests}} | Config];
 group_config(sha256 = Type, Config) ->
     Msgs =   [rfc_4634_test1(), rfc_4634_test2_1(), long_msg()],
     Digests = rfc_4634_sha256_digests() ++ [long_sha256_digest()],
@@ -150,6 +156,10 @@ rfc_4634_test2() ->
     B2 = rfc_4634_test2_2b(),
     <<A2/binary, B2/binary>>.
 
+rfc_4634_sha_digests()->
+     [hexstr2bin("A9993E364706816ABA3E25717850C26C9CD0D89D"),
+      hexstr2bin("84983E441C3BD26EBAAE4AA1F95129E5E54670F1")].
+
 rfc_4634_sha256_digests() ->
     [
      hexstr2bin("BA7816BF8F01CFEA4141"
@@ -167,6 +177,9 @@ rfc_4634_sha512_digests() ->
 
 long_msg() ->
     fun() -> lists:duplicate(1000000, $a) end.
+
+long_sha_digest() ->
+    hexstr2bin("34aa973c" "d4c4daa4" "f61eeb2b" "dbad2731" "6534016f").
 
 long_sha256_digest() ->
     hexstr2bin("cdc76e5c" "9914fb92" "81a1c7e2" "84d73e67" "f1809a48" "a497200e" "046d39cc" "c7112cd0").

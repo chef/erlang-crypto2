@@ -20,6 +20,8 @@ hash(Type, Data) ->
     Context = hash_update(hash_init(Type), Data),
     hash_final(Context).
 
+hash_init(sha) ->
+    sha1_init();
 hash_init(sha256) ->
     sha256_init();
 hash_init(sha512) ->
@@ -40,5 +42,6 @@ on_load() ->
       {error, "Could not find library"}
   end.
 
+sha1_init() -> "Undefined".
 sha256_init() -> "Undefined".
 sha512_init() -> "Undefined".

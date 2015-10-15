@@ -16,6 +16,7 @@ typedef struct erl_evp_md_ctx {
 } erl_evp_md_ctx_t;
 // ------------------------------
 
+static ERL_NIF_TERM sha1_init(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]);
 static ERL_NIF_TERM sha256_init(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]);
 static ERL_NIF_TERM sha512_init(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]);
 static ERL_NIF_TERM hash_update(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]);
@@ -28,11 +29,17 @@ static ERL_NIF_TERM evp_md_update(ErlNifEnv* env, erl_evp_md_ctx_t* erl_md_ctx,
 static ERL_NIF_TERM evp_md_final(ErlNifEnv* env, erl_evp_md_ctx_t* erl_md_ctx);
 
 static ErlNifFunc nif_funcs[] = {
+    {"sha1_init", 0, sha1_init},
     {"sha256_init", 0, sha256_init},
     {"sha512_init", 0, sha512_init},
     {"hash_update", 2, hash_update},
     {"hash_final", 1, hash_final},
 };
+
+static ERL_NIF_TERM sha1_init(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    return evp_md_init(env, EVP_sha1());
+}
 
 static ERL_NIF_TERM sha256_init(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
