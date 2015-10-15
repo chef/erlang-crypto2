@@ -85,7 +85,9 @@ static ERL_NIF_TERM evp_md_init(ErlNifEnv* env, const EVP_MD* md) {
     term = enif_make_resource(env, erl_md_ctx);
     enif_release_resource(erl_md_ctx);
 
-    erl_md_ctx->ctx = EVP_MD_CTX_create();
+    if(!(erl_md_ctx->ctx = EVP_MD_CTX_create())) {
+        return atom_error;
+    }
 
     if(!EVP_DigestInit_ex(erl_md_ctx->ctx, md, NULL)) {
         return atom_error;
@@ -105,7 +107,9 @@ static ERL_NIF_TERM evp_md_update(ErlNifEnv* env, erl_evp_md_ctx_t* erl_md_ctx,
     term = enif_make_resource(env, new_erl_md_ctx);
     enif_release_resource(new_erl_md_ctx);
 
-    new_erl_md_ctx->ctx = EVP_MD_CTX_create();
+    if(!(new_erl_md_ctx->ctx = EVP_MD_CTX_create())) {
+        return atom_error;
+    }
 
     if(!EVP_MD_CTX_copy_ex(new_erl_md_ctx->ctx, erl_md_ctx->ctx)) {
         return atom_error;
@@ -124,7 +128,10 @@ static ERL_NIF_TERM evp_md_final(ErlNifEnv* env, erl_evp_md_ctx_t* erl_md_ctx)
     EVP_MD_CTX* ctx;
 
     // Make a copy so we do not change the context
-    ctx = EVP_MD_CTX_create();
+    if(!(ctx = EVP_MD_CTX_create())) {
+        return atom_error;
+    }
+
     if(!EVP_MD_CTX_copy_ex(ctx, erl_md_ctx->ctx)) {
         return atom_error;
     }
