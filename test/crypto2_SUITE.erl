@@ -68,12 +68,12 @@ end_per_testcase(_Name,Config) ->
     Config.
 
 group_config(sha256 = Type, Config) ->
-    Msgs =   [rfc_4634_test1(), rfc_4634_test2_1()],
-    Digests = rfc_4634_sha256_digests(),
+    Msgs =   [rfc_4634_test1(), rfc_4634_test2_1(), long_msg()],
+    Digests = rfc_4634_sha256_digests() ++ [long_sha256_digest()],
     [{hash, {Type, Msgs, Digests}} | Config];
 group_config(sha512 = Type, Config) ->
-    Msgs =  [rfc_4634_test1(), rfc_4634_test2()],
-    Digests = rfc_4634_sha512_digests(),
+    Msgs =  [rfc_4634_test1(), rfc_4634_test2(), long_msg()],
+    Digests = rfc_4634_sha512_digests() ++ [long_sha512_digest()],
     [{hash, {Type, Msgs, Digests}} | Config].
 %%--------------------------------------------------------------------
 hexstr2bin(S) ->
@@ -163,3 +163,14 @@ rfc_4634_sha512_digests() ->
 		"0A9EEEE64B55D39A2192992A274FC1A836BA3C23A3FEEBBD"
 		"454D4423643CE80E2A9AC94FA54CA49F"),
      hexstr2bin("8E959B75DAE313DA8CF4F72814FC143F8F7779C6EB9F7FA17299AEADB6889018501D289E4900F7E4331B99DEC4B5433AC7D329EEB6DD26545E96E55B874BE909")].
+
+
+long_msg() ->
+    fun() -> lists:duplicate(1000000, $a) end.
+
+long_sha256_digest() ->
+    hexstr2bin("cdc76e5c" "9914fb92" "81a1c7e2" "84d73e67" "f1809a48" "a497200e" "046d39cc" "c7112cd0").
+
+long_sha512_digest() ->
+    hexstr2bin("e718483d0ce76964" "4e2e42c7bc15b463" "8e1f98b13b204428" "5632a803afa973eb"
+	       "de0ff244877ea60a" "4cb0432ce577c31b" "eb009c5c2c49aa2e" "4eadb217ad8cc09b").
