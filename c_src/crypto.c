@@ -1,5 +1,6 @@
 #include <openssl/opensslconf.h>
 #include <openssl/evp.h>
+#include <openssl/rand.h>
 #include "crypto_callback.h"
 #include "erl_nif.h"
 
@@ -21,6 +22,7 @@ static ERL_NIF_TERM sha256_init(ErlNifEnv* env, int argc, const ERL_NIF_TERM arg
 static ERL_NIF_TERM sha512_init(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]);
 static ERL_NIF_TERM hash_update(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]);
 static ERL_NIF_TERM hash_final(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]);
+static ERL_NIF_TERM rand_bytes(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]);
 
 // Helpers
 static ERL_NIF_TERM evp_md_init(ErlNifEnv* env, const EVP_MD* md);
@@ -34,6 +36,7 @@ static ErlNifFunc nif_funcs[] = {
     {"sha512_init", 0, sha512_init},
     {"hash_update", 2, hash_update},
     {"hash_final", 1, hash_final},
+    {"rand_bytes_nif", 1, rand_bytes},
 };
 
 static ERL_NIF_TERM sha1_init(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
@@ -152,6 +155,21 @@ static ERL_NIF_TERM evp_md_final(ErlNifEnv* env, erl_evp_md_ctx_t* erl_md_ctx)
     EVP_MD_CTX_destroy(ctx);
 
     return ret;
+}
+
+static ERL_NIF_TERM rand_bytes(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
+    unsigned int bytes;
+    ERL_NIF_TERM ret;
+
+    if (!enif_get_uint(env, argv[0], &bytes)) {
+        return enif_make_badarg(env);
+    }
+
+    if (RAND_bytes(enif_make_new_binary(env, bytes, &ret), bytes)) {
+        return ret;
+    } else {
+        return atom_error;
+    }
 }
 
 static void evp_md_destructor(ErlNifEnv* env, erl_evp_md_ctx_t* obj) {
