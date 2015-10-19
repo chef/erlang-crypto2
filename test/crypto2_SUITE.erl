@@ -24,7 +24,8 @@
 
 all() -> [{group, sha},
           {group, sha256},
-          {group, sha512}
+          {group, sha512},
+          rand_bytes
          ].
 
 groups() -> [{sha, [], [hash]},
@@ -80,7 +81,9 @@ group_config(sha256 = Type, Config) ->
 group_config(sha512 = Type, Config) ->
     Msgs =  [rfc_4634_test1(), rfc_4634_test2(), long_msg()],
     Digests = rfc_4634_sha512_digests() ++ [long_sha512_digest()],
-    [{hash, {Type, Msgs, Digests}} | Config].
+    [{hash, {Type, Msgs, Digests}} | Config];
+group_config(_, Config) ->
+    Config.
 %%--------------------------------------------------------------------
 hexstr2bin(S) ->
     list_to_binary(hexstr2list(S)).
@@ -187,3 +190,7 @@ long_sha256_digest() ->
 long_sha512_digest() ->
     hexstr2bin("e718483d0ce76964" "4e2e42c7bc15b463" "8e1f98b13b204428" "5632a803afa973eb"
 	       "de0ff244877ea60a" "4cb0432ce577c31b" "eb009c5c2c49aa2e" "4eadb217ad8cc09b").
+
+rand_bytes(_Config) ->
+    10 = byte_size(crypto2:rand_bytes(10)),
+    20 = byte_size(crypto2:strong_rand_bytes(20)).

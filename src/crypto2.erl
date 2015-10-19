@@ -9,7 +9,9 @@
          hash/2,
          hash_init/1,
          hash_update/2,
-         hash_final/1
+         hash_final/1,
+         rand_bytes/1,
+         strong_rand_bytes/1
         ]).
 
 %%====================================================================
@@ -30,6 +32,15 @@ hash_init(sha512) ->
 hash_update(_Context, _Data) -> "Undefined".
 hash_final(_Context) -> "Undefined".
 
+rand_bytes(NumBytes) ->
+    case rand_bytes_nif(NumBytes) of
+        error -> erlang:error(low_entropy);
+        Data -> Data
+    end.
+
+strong_rand_bytes(NumBytes) ->
+    rand_bytes(NumBytes).
+
 %%====================================================================
 %% Internal functions
 %%====================================================================
@@ -45,3 +56,4 @@ on_load() ->
 sha1_init() -> "Undefined".
 sha256_init() -> "Undefined".
 sha512_init() -> "Undefined".
+rand_bytes_nif(_NumBytes) -> "Undefined".
