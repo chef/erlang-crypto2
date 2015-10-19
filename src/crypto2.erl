@@ -10,7 +10,8 @@
          hash_init/1,
          hash_update/2,
          hash_final/1,
-         rand_bytes/1
+         rand_bytes/1,
+         strong_rand_bytes/1
         ]).
 
 %%====================================================================
@@ -36,6 +37,9 @@ rand_bytes(NumBytes) ->
         error -> erlang:error(low_entropy);
         Data -> Data
     end.
+
+strong_rand_bytes(NumBytes) ->
+    rand_bytes(NumBytes).
 
 %%====================================================================
 %% Internal functions

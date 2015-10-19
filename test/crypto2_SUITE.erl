@@ -192,4 +192,5 @@ long_sha512_digest() ->
 	       "de0ff244877ea60a" "4cb0432ce577c31b" "eb009c5c2c49aa2e" "4eadb217ad8cc09b").
 
 rand_bytes(_Config) ->
-    10 = byte_size(crypto2:rand_bytes(10)).
+    10 = byte_size(crypto2:rand_bytes(10)),
+    20 = byte_size(crypto2:strong_rand_bytes(20)).
