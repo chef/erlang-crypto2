@@ -17,8 +17,7 @@
  * %CopyrightEnd%
  */
 
-struct crypto_callbacks
-{
+struct crypto_callbacks {
     size_t sizeof_me;
 
     void* (*crypto_alloc)(size_t size);
@@ -26,14 +25,14 @@ struct crypto_callbacks
     void (*crypto_free)(void* ptr);
 
     /* openssl callbacks */
-    void (*locking_function)(int mode, int n, const char *file, int line);
+    void (*locking_function)(int mode, int n, const char* file, int line);
     unsigned long (*id_function)(void);
-    struct CRYPTO_dynlock_value* (*dyn_create_function)(const char *file,
-							int line);
+    struct CRYPTO_dynlock_value* (*dyn_create_function)(const char* file,
+        int line);
     void (*dyn_lock_function)(int mode, struct CRYPTO_dynlock_value* ptr,
-			      const char *file, int line);
-    void (*dyn_destroy_function)(struct CRYPTO_dynlock_value *ptr,
-				 const char *file, int line);
+        const char* file, int line);
+    void (*dyn_destroy_function)(struct CRYPTO_dynlock_value* ptr,
+        const char* file, int line);
 };
 
 struct crypto_callbacks* get_crypto_callbacks(int nlocks);

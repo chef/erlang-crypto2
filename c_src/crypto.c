@@ -6,7 +6,6 @@
 
 static ERL_NIF_TERM atom_error;
 
-
 // ------ erlrt_evp_md_ctx ------
 //  This will be the nif resource type for
 //  erl_evp_md_ctx.
@@ -27,16 +26,16 @@ static ERL_NIF_TERM rand_bytes(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv
 // Helpers
 static ERL_NIF_TERM evp_md_init(ErlNifEnv* env, const EVP_MD* md);
 static ERL_NIF_TERM evp_md_update(ErlNifEnv* env, erl_evp_md_ctx_t* erl_md_ctx,
-        void* d, size_t cnt);
+    void* d, size_t cnt);
 static ERL_NIF_TERM evp_md_final(ErlNifEnv* env, erl_evp_md_ctx_t* erl_md_ctx);
 
 static ErlNifFunc nif_funcs[] = {
-    {"sha1_init", 0, sha1_init},
-    {"sha256_init", 0, sha256_init},
-    {"sha512_init", 0, sha512_init},
-    {"hash_update", 2, hash_update},
-    {"hash_final", 1, hash_final},
-    {"rand_bytes_nif", 1, rand_bytes},
+    { "sha1_init", 0, sha1_init },
+    { "sha256_init", 0, sha256_init },
+    { "sha512_init", 0, sha512_init },
+    { "hash_update", 2, hash_update },
+    { "hash_final", 1, hash_final },
+    { "rand_bytes_nif", 1, rand_bytes },
 };
 
 static ERL_NIF_TERM sha1_init(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
@@ -62,11 +61,11 @@ static ERL_NIF_TERM hash_update(ErlNifEnv* env, int argc, const ERL_NIF_TERM arg
     ErlNifBinary ibin;
     erl_evp_md_ctx_t* erl_md_ctx;
 
-    if(!enif_get_resource(env, argv[0], erlrt_evp_md_ctx, (void**)&erl_md_ctx)) {
+    if (!enif_get_resource(env, argv[0], erlrt_evp_md_ctx, (void**)&erl_md_ctx)) {
         return enif_make_badarg(env);
     }
 
-    if(!enif_inspect_iolist_as_binary(env, argv[1], &ibin)) {
+    if (!enif_inspect_iolist_as_binary(env, argv[1], &ibin)) {
         return enif_make_badarg(env);
     }
 
@@ -80,26 +79,27 @@ static ERL_NIF_TERM hash_final(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv
 {
     erl_evp_md_ctx_t* erl_md_ctx;
 
-    if(!enif_get_resource(env, argv[0], erlrt_evp_md_ctx, (void**)&erl_md_ctx)) {
+    if (!enif_get_resource(env, argv[0], erlrt_evp_md_ctx, (void**)&erl_md_ctx)) {
         return enif_make_badarg(env);
     }
 
     return evp_md_final(env, erl_md_ctx);
 }
 
-static ERL_NIF_TERM evp_md_init(ErlNifEnv* env, const EVP_MD* md) {
+static ERL_NIF_TERM evp_md_init(ErlNifEnv* env, const EVP_MD* md)
+{
     ERL_NIF_TERM term;
     erl_evp_md_ctx_t* erl_md_ctx = (erl_evp_md_ctx_t*)enif_alloc_resource(
-            erlrt_evp_md_ctx, sizeof(erl_evp_md_ctx_t));
+        erlrt_evp_md_ctx, sizeof(erl_evp_md_ctx_t));
 
     term = enif_make_resource(env, erl_md_ctx);
     enif_release_resource(erl_md_ctx);
 
-    if(!(erl_md_ctx->ctx = EVP_MD_CTX_create())) {
+    if (!(erl_md_ctx->ctx = EVP_MD_CTX_create())) {
         return atom_error;
     }
 
-    if(!EVP_DigestInit_ex(erl_md_ctx->ctx, md, NULL)) {
+    if (!EVP_DigestInit_ex(erl_md_ctx->ctx, md, NULL)) {
         return atom_error;
     }
 
@@ -107,25 +107,25 @@ static ERL_NIF_TERM evp_md_init(ErlNifEnv* env, const EVP_MD* md) {
 }
 
 static ERL_NIF_TERM evp_md_update(ErlNifEnv* env, erl_evp_md_ctx_t* erl_md_ctx,
-        void* d, size_t cnt)
+    void* d, size_t cnt)
 {
     ERL_NIF_TERM term;
     // We want to create a copy of the data structure because immutable
     erl_evp_md_ctx_t* new_erl_md_ctx = (erl_evp_md_ctx_t*)enif_alloc_resource(
-            erlrt_evp_md_ctx, sizeof(erl_evp_md_ctx_t));
+        erlrt_evp_md_ctx, sizeof(erl_evp_md_ctx_t));
 
     term = enif_make_resource(env, new_erl_md_ctx);
     enif_release_resource(new_erl_md_ctx);
 
-    if(!(new_erl_md_ctx->ctx = EVP_MD_CTX_create())) {
+    if (!(new_erl_md_ctx->ctx = EVP_MD_CTX_create())) {
         return atom_error;
     }
 
-    if(!EVP_MD_CTX_copy_ex(new_erl_md_ctx->ctx, erl_md_ctx->ctx)) {
+    if (!EVP_MD_CTX_copy_ex(new_erl_md_ctx->ctx, erl_md_ctx->ctx)) {
         return atom_error;
     }
 
-    if(!EVP_DigestUpdate(new_erl_md_ctx->ctx, d, cnt)) {
+    if (!EVP_DigestUpdate(new_erl_md_ctx->ctx, d, cnt)) {
         return atom_error;
     }
 
@@ -138,17 +138,17 @@ static ERL_NIF_TERM evp_md_final(ErlNifEnv* env, erl_evp_md_ctx_t* erl_md_ctx)
     EVP_MD_CTX* ctx;
 
     // Make a copy so we do not change the context
-    if(!(ctx = EVP_MD_CTX_create())) {
+    if (!(ctx = EVP_MD_CTX_create())) {
         return atom_error;
     }
 
-    if(!EVP_MD_CTX_copy_ex(ctx, erl_md_ctx->ctx)) {
+    if (!EVP_MD_CTX_copy_ex(ctx, erl_md_ctx->ctx)) {
         return atom_error;
     }
 
-    if(!EVP_DigestFinal_ex(
-                ctx,
-                enif_make_new_binary(env, EVP_MD_CTX_size(ctx), &ret), NULL)) {
+    if (!EVP_DigestFinal_ex(
+            ctx,
+            enif_make_new_binary(env, EVP_MD_CTX_size(ctx), &ret), NULL)) {
         ret = atom_error;
     }
 
@@ -157,7 +157,8 @@ static ERL_NIF_TERM evp_md_final(ErlNifEnv* env, erl_evp_md_ctx_t* erl_md_ctx)
     return ret;
 }
 
-static ERL_NIF_TERM rand_bytes(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
+static ERL_NIF_TERM rand_bytes(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
     unsigned int bytes;
     ERL_NIF_TERM ret;
 
@@ -167,16 +168,19 @@ static ERL_NIF_TERM rand_bytes(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv
 
     if (RAND_bytes(enif_make_new_binary(env, bytes, &ret), bytes)) {
         return ret;
-    } else {
+    }
+    else {
         return atom_error;
     }
 }
 
-static void evp_md_destructor(ErlNifEnv* env, erl_evp_md_ctx_t* obj) {
+static void evp_md_destructor(ErlNifEnv* env, erl_evp_md_ctx_t* obj)
+{
     EVP_MD_CTX_destroy(obj->ctx);
 }
 
-static int init(ErlNifEnv* env, ERL_NIF_TERM load_info) {
+static int init(ErlNifEnv* env, ERL_NIF_TERM load_info)
+{
     struct crypto_callbacks* ccb;
 
     /*
@@ -188,17 +192,17 @@ static int init(ErlNifEnv* env, ERL_NIF_TERM load_info) {
      * Initialize resource types
      */
     erlrt_evp_md_ctx = enif_open_resource_type(
-            env, "crypto2",
-            "erlrt_evp_md_ctx",
-            (ErlNifResourceDtor*)evp_md_destructor,
-            ERL_NIF_RT_CREATE,
-            NULL);
+        env, "crypto2",
+        "erlrt_evp_md_ctx",
+        (ErlNifResourceDtor*)evp_md_destructor,
+        ERL_NIF_RT_CREATE,
+        NULL);
 
     /*
      * Initialize threading context
      */
     ccb = get_crypto_callbacks(CRYPTO_num_locks());
-    if(!ccb) {
+    if (!ccb) {
         return 1;
     }
 
@@ -212,8 +216,9 @@ static int init(ErlNifEnv* env, ERL_NIF_TERM load_info) {
     return 1;
 }
 
-static int load(ErlNifEnv* env, void** priv_data, ERL_NIF_TERM load_info) {
-    if(!init(env, load_info)) {
+static int load(ErlNifEnv* env, void** priv_data, ERL_NIF_TERM load_info)
+{
+    if (!init(env, load_info)) {
         return -1;
     }
     *priv_data = NULL;
