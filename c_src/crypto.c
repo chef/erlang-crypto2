@@ -213,6 +213,10 @@ static int init(ErlNifEnv* env, ERL_NIF_TERM load_info)
     CRYPTO_set_dynlock_lock_callback(ccb->dyn_lock_function);
     CRYPTO_set_dynlock_destroy_callback(ccb->dyn_destroy_function);
 
+#ifdef CRYPTO_FIPS_MODE
+    FIPS_mode_set(1);
+#endif
+
     return 1;
 }
 
