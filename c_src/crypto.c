@@ -1,9 +1,22 @@
 #include <openssl/opensslconf.h>
+#include <openssl/ssl.h>
 #include <openssl/evp.h>
 #include <openssl/rand.h>
 #include <openssl/rsa.h>
+#include <openssl/err.h>
 #include "crypto_callback.h"
 #include "erl_nif.h"
+
+#ifdef DEBUG
+#define OPENSSL_PRINT_ERROR(msg) print_ssl_error(msg)
+static void print_ssl_error(const char* msg) {
+    char err[256];
+    ERR_error_string_n(ERR_get_error(), err, 256);
+    enif_fprintf(stderr, "%s: %s\n", msg, err);
+}
+#else
+#define OPENSSL_PRINT_ERROR(msg)
+#endif
 
 static ERL_NIF_TERM atom_error;
 static ERL_NIF_TERM atom_true;
@@ -230,6 +243,7 @@ static ERL_NIF_TERM rsa_sign(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]
         }
         return enif_make_binary(env, &ret_bin);
     } else {
+        OPENSSL_PRINT_ERROR("sign failed");
         enif_release_binary(&ret_bin);
         return atom_error;
     }
@@ -388,6 +402,10 @@ static int init(ErlNifEnv* env, ERL_NIF_TERM load_info)
 
 #ifdef CRYPTO_FIPS_MODE
     FIPS_mode_set(1);
+#endif
+
+#ifdef DEBUG
+    SSL_load_error_strings();
 #endif
 
     return 1;
