@@ -44,7 +44,10 @@ strong_rand_bytes(NumBytes) ->
     rand_bytes(NumBytes).
 
 sign(rsa, DigestType, {digest, Digest}, Key) when is_binary(Digest) ->
-    rsa_sign(DigestType, Digest, map_ensure_int_as_bin(Key));
+    case rsa_sign(DigestType, Digest, map_ensure_int_as_bin(Key)) of
+        error -> erlang:error(badkey, [DigestType, Digest, Key]);
+        Sign -> Sign
+    end;
 sign(rsa, DigestType, Msg, Key) when is_binary(Msg) ->
     sign(rsa, DigestType, {digest, hash(DigestType, Msg)}, Key).
 
