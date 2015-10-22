@@ -25,12 +25,14 @@
 all() -> [{group, sha},
           {group, sha256},
           {group, sha512},
+          {group, rsa},
           rand_bytes
          ].
 
 groups() -> [{sha, [], [hash]},
              {sha256, [], [hash]},
-             {sha512, [], [hash]}
+             {sha512, [], [hash]},
+             {rsa, [], [sign_verify]}
             ].
 
 hash() ->
@@ -44,6 +46,12 @@ hash(Config) when is_list(Config) ->
     hash(Type, Msgs, Digests),
     hash(Type, lists:map(fun iolistify/1, Msgs), Digests),
     hash_increment(Type, Inc, IncrDigest).
+
+sign_verify() ->
+     [{doc, "Sign/verify digital signatures"}].
+sign_verify(Config) when is_list(Config) ->
+    SignVerify = proplists:get_value(sign_verify, Config),
+    lists:foreach(fun do_sign_verify/1, SignVerify).
 
 %%-------------------------------------------------------------------
 %init_per_suite(Config) ->
@@ -82,6 +90,12 @@ group_config(sha512 = Type, Config) ->
     Msgs =  [rfc_4634_test1(), rfc_4634_test2(), long_msg()],
     Digests = rfc_4634_sha512_digests() ++ [long_sha512_digest()],
     [{hash, {Type, Msgs, Digests}} | Config];
+group_config(rsa = Type, Config) ->
+    Msg = rsa_plain(),
+    PublicS = rsa_public_stronger(),
+    PrivateS = rsa_private_stronger(),
+    SignVerify = sign_verify_tests(Type, Msg, PublicS, PrivateS),
+    [{sign_verify, SignVerify} | Config];
 group_config(_, Config) ->
     Config.
 %%--------------------------------------------------------------------
@@ -194,3 +208,38 @@ long_sha512_digest() ->
 rand_bytes(_Config) ->
     10 = byte_size(crypto2:rand_bytes(10)),
     20 = byte_size(crypto2:strong_rand_bytes(20)).
+
+rsa_plain() ->
+    <<"7896345786348756234 Hejsan Svejsan, erlang crypto debugger"
+      "09812312908312378623487263487623412039812 huagasd">>.
+
+rsa_public_stronger() ->
+    [65537, 24629450921918866883077380602720734920775458960049554761386137065662137652635369332143446151320538248280934442179850504891395344346514465469955766163141133564033962851182759993807898821114734943339732032639891483186089941567854227407119560631150779000222837755424893038740314247760600374970909894211201220612920040986106639419467243909950276018045907029941478599124238353052062083560294570722081552510960894164859765695309596889747541376908786225647625736062865138957717982693312699025417086612046330464651009693307624955796202070510577399561730651967517158452930742355327167632521808183383868100102455048819375344881].
+
+rsa_private_stronger() ->
+    rsa_public_stronger() ++ [13565232776562604620467234237694854016819673873109064019820773052201665024482754648718278717031083946624786145611240731564761987114634269887293030432042088547345315212418830656522115993209293567218379960177754901461542373481136856927955012596579314262051109321754382091434920473734937991286600905464814063189230779981494358415076362038786197620360127262110530926733754185204773610295221669711309000953136320804528874719105049753061737780710448207922456570922652651354760939379096788728229638142403068102990416717272880560951246813789730402978652924934794503277969128609831043469924881848849409122972426787999886557185].
+
+sign_verify_tests(Type, Msg, PublicS, PrivateS) ->
+    sign_verify_tests(Type, [sha256, sha512], Msg, PublicS, PrivateS).
+
+sign_verify_tests(Type, Hashs, Msg, Public, Private) ->
+    lists:foldl(fun(Hash, Acc) ->
+                        [{Type, Hash,  Public, Private, Msg}|Acc]
+                end, [], Hashs).
+
+do_sign_verify({Type, Hash, Public, Private, Msg}) ->
+    Signature = crypto2:sign(Type, Hash, Msg, Private),
+    case crypto2:verify(Type, Hash, Msg, Signature, Public) of
+        true ->
+            negative_verify(Type, Hash, Msg, <<10,20>>, Public);
+        false ->
+            ct:fail({{crypto, verify, [Type, Hash, Msg, Signature, Public]}})
+    end.
+
+negative_verify(Type, Hash, Msg, Signature, Public) ->
+    case crypto2:verify(Type, Hash, Msg, Signature, Public) of
+        true ->
+            ct:fail({{crypto, verify, [Type, Hash, Msg, Signature, Public]}, should_fail});
+        false ->
+            ok
+    end.
