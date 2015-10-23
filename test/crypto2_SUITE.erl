@@ -22,14 +22,16 @@
 -include_lib("common_test/include/ct.hrl").
 -compile(export_all).
 
-all() -> [{group, sha},
+all() -> [{group, md5},
+          {group, sha},
           {group, sha256},
           {group, sha512},
           {group, rsa},
           rand_bytes
          ].
 
-groups() -> [{sha, [], [hash]},
+groups() -> [{md5, [], [hash]},
+             {sha, [], [hash]},
              {sha256, [], [hash]},
              {sha512, [], [hash]},
              {rsa, [], [sign_verify, public_encrypt]}
@@ -85,6 +87,10 @@ end_per_testcase(info, Config) ->
 end_per_testcase(_Name,Config) ->
     Config.
 
+group_config(md5 = Type, Config) ->
+    Msgs = rfc_1321_msgs(),
+    Digests = rfc_1321_md5_digests(),
+    [{hash, {Type, Msgs, Digests}} | Config];
 group_config(sha = Type, Config) ->
     Msgs = [rfc_4634_test1(), rfc_4634_test2_1(),long_msg()],
     Digests = rfc_4634_sha_digests() ++ [long_sha_digest()],
@@ -292,3 +298,22 @@ int_to_bin_neg(-1, Ds=[MSB|_]) when MSB >= 16#80 ->
     list_to_binary(Ds);
 int_to_bin_neg(X,Ds) ->
     int_to_bin_neg(X bsr 8, [(X band 255)|Ds]).
+
+rfc_1321_msgs() ->
+    [<<"">>, 
+     <<"a">>,
+     <<"abc">>, 
+     <<"message digest">>,
+     <<"abcdefghijklmnopqrstuvwxyz">>,
+     <<"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789">>,
+     <<"12345678901234567890123456789012345678901234567890123456789012345678901234567890">>
+    ].
+
+rfc_1321_md5_digests() ->
+    [hexstr2bin("d41d8cd98f00b204e9800998ecf8427e"),
+     hexstr2bin("0cc175b9c0f1b6a831c399e269772661"),
+     hexstr2bin("900150983cd24fb0d6963f7d28e17f72"),
+     hexstr2bin("f96b697d7cb7938d525a2f31aaf161d0"),
+     hexstr2bin("c3fcd3d76192e4007dfb496cca67e13b"),
+     hexstr2bin("d174ab98d277d9f5a5611c2c9f419d9f"),
+     hexstr2bin("57edf4a22be3c955ac49da2e2107b67a")].
