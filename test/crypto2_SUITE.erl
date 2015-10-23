@@ -32,7 +32,7 @@ all() -> [{group, sha},
 groups() -> [{sha, [], [hash]},
              {sha256, [], [hash]},
              {sha512, [], [hash]},
-             {rsa, [], [sign_verify]}
+             {rsa, [], [sign_verify, public_encrypt]}
             ].
 
 hash() ->
@@ -46,6 +46,13 @@ hash(Config) when is_list(Config) ->
     hash(Type, Msgs, Digests),
     hash(Type, lists:map(fun iolistify/1, Msgs), Digests),
     hash_increment(Type, Inc, IncrDigest).
+
+public_encrypt() ->
+     [{doc, "Test public_encrypt/decrypt and private_encrypt/decrypt functions. "}].
+public_encrypt(Config) when is_list(Config) ->
+    Params = proplists:get_value(pub_priv_encrypt, Config),
+    lists:foreach(fun do_public_encrypt/1, Params),
+    lists:foreach(fun do_private_encrypt/1, Params).
 
 sign_verify() ->
      [{doc, "Sign/verify digital signatures"}].
@@ -95,7 +102,11 @@ group_config(rsa = Type, Config) ->
     PublicS = rsa_public_stronger(),
     PrivateS = rsa_private_stronger(),
     SignVerify = sign_verify_tests(Type, Msg, PublicS, PrivateS),
-    [{sign_verify, SignVerify} | Config];
+    MsgPubEnc = <<"7896345786348 Asldi">>,
+    PubPrivEnc = [{rsa, PublicS, PrivateS, MsgPubEnc, rsa_pkcs1_padding},
+                  no_padding()
+                 ],
+    [{sign_verify, SignVerify}, {pub_priv_encrypt, PubPrivEnc} | Config];
 group_config(_, Config) ->
     Config.
 %%--------------------------------------------------------------------
@@ -243,3 +254,41 @@ negative_verify(Type, Hash, Msg, Signature, Public) ->
         false ->
             ok
     end.
+
+do_public_encrypt({Type, Public, Private, Msg, Padding}) ->
+    PublicEcn = (catch crypto2:public_encrypt(Type, Msg, Public, Padding)),
+    case crypto2:private_decrypt(Type, PublicEcn, Private, Padding) of
+        Msg ->
+            ok;
+        Other ->
+            ct:fail({{crypto, private_decrypt, [Type, PublicEcn, Private, Padding]}, {expected, Msg}, {got, Other}})
+    end.
+
+do_private_encrypt({Type, Public, Private, Msg, Padding}) ->
+    PrivEcn = (catch crypto2:private_encrypt(Type, Msg, Private, Padding)),
+    case crypto2:public_decrypt(rsa, PrivEcn, Public, Padding) of
+        Msg ->
+            ok;
+        Other ->
+            ct:fail({{crypto, public_decrypt, [Type, PrivEcn, Public, Padding]}, {expected, Msg}, {got, Other}})
+    end.
+
+no_padding() ->
+    Public = [_, Mod] = rsa_public_stronger(),
+    Private = rsa_private_stronger(),
+    MsgLen = erlang:byte_size(int_to_bin(Mod)),
+    Msg = list_to_binary(lists:duplicate(MsgLen, $X)),
+    {rsa, Public, Private, Msg, rsa_no_padding}.
+
+int_to_bin(X) when X < 0 -> int_to_bin_neg(X, []);
+int_to_bin(X) -> int_to_bin_pos(X, []).
+
+int_to_bin_pos(0,Ds=[_|_]) ->
+    list_to_binary(Ds);
+int_to_bin_pos(X,Ds) ->
+    int_to_bin_pos(X bsr 8, [(X band 255)|Ds]).
+
+int_to_bin_neg(-1, Ds=[MSB|_]) when MSB >= 16#80 ->
+    list_to_binary(Ds);
+int_to_bin_neg(X,Ds) ->
+    int_to_bin_neg(X bsr 8, [(X band 255)|Ds]).
