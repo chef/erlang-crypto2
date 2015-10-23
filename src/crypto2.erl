@@ -10,6 +10,10 @@
          hash_init/1,
          hash_update/2,
          hash_final/1,
+         public_encrypt/4,
+         private_decrypt/4,
+         private_encrypt/4,
+         public_decrypt/4,
          rand_bytes/1,
          strong_rand_bytes/1,
          sign/4,
@@ -33,6 +37,37 @@ hash_init(sha512) ->
 
 hash_update(_Context, _Data) -> "Undefined".
 hash_final(_Context) -> "Undefined".
+
+public_encrypt(rsa, BinMesg, Key, Padding) ->
+    case rsa_public_crypt(BinMesg,  map_ensure_int_as_bin(Key), Padding, true) of
+        error ->
+            erlang:error(encrypt_failed, [BinMesg,Key, Padding]);
+        Sign -> Sign
+    end.
+
+%% Binary, Key = [E,N,D]
+private_decrypt(rsa, BinMesg, Key, Padding) ->
+    case rsa_private_crypt(BinMesg, map_ensure_int_as_bin(Key), Padding, false) of
+        error ->
+            erlang:error(decrypt_failed, [BinMesg,Key, Padding]);
+        Sign -> Sign
+    end.
+
+%% Binary, Key = [E,N,D]
+private_encrypt(rsa, BinMesg, Key, Padding) ->
+    case rsa_private_crypt(BinMesg, map_ensure_int_as_bin(Key), Padding, true) of
+        error ->
+            erlang:error(encrypt_failed, [BinMesg,Key, Padding]);
+        Sign -> Sign
+    end.
+
+%% Binary, Key = [E,N]
+public_decrypt(rsa, BinMesg, Key, Padding) ->
+    case rsa_public_crypt(BinMesg, map_ensure_int_as_bin(Key), Padding, false) of
+        error ->
+            erlang:error(decrypt_failed, [BinMesg,Key, Padding]);
+        Sign -> Sign
+    end.
 
 rand_bytes(NumBytes) ->
     case rand_bytes_nif(NumBytes) of
@@ -94,3 +129,5 @@ sha512_init() -> "Undefined".
 rand_bytes_nif(_NumBytes) -> "Undefined".
 rsa_sign(_,_,_) -> "Undefined".
 rsa_verify(_,_,_,_) -> "Undefined".
+rsa_public_crypt(_,_,_,_) -> "Undefined".
+rsa_private_crypt(_,_,_,_) -> "Undefined".

@@ -23,6 +23,9 @@ static ERL_NIF_TERM atom_true;
 static ERL_NIF_TERM atom_false;
 static ERL_NIF_TERM atom_sha256;
 static ERL_NIF_TERM atom_sha512;
+static ERL_NIF_TERM atom_rsa_no_padding;
+static ERL_NIF_TERM atom_rsa_pkcs1_padding;
+static ERL_NIF_TERM atom_rsa_pkcs1_oaep_padding;
 
 // ------ erlrt_evp_md_ctx ------
 //  This will be the nif resource type for
@@ -42,6 +45,8 @@ static ERL_NIF_TERM hash_final(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv
 static ERL_NIF_TERM rand_bytes(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]);
 static ERL_NIF_TERM rsa_sign(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]);
 static ERL_NIF_TERM rsa_verify(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]);
+static ERL_NIF_TERM rsa_public_crypt(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]);
+static ERL_NIF_TERM rsa_private_crypt(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]);
 
 // Helpers
 static ERL_NIF_TERM evp_md_init(ErlNifEnv* env, const EVP_MD* md);
@@ -52,6 +57,7 @@ static int get_atom_nid(ERL_NIF_TERM key);
 static int get_rsa_private_key(ErlNifEnv* env, ERL_NIF_TERM key, RSA *rsa);
 static int get_rsa_public_key(ErlNifEnv* env, ERL_NIF_TERM key, RSA *rsa);
 static int get_bn_from_bin(ErlNifEnv* env, ERL_NIF_TERM term, BIGNUM** bnp);
+static int rsa_pad(ERL_NIF_TERM term, int* padding);
 
 static ErlNifFunc nif_funcs[] = {
     { "sha1_init", 0, sha1_init },
@@ -62,6 +68,8 @@ static ErlNifFunc nif_funcs[] = {
     { "rand_bytes_nif", 1, rand_bytes },
     { "rsa_sign", 3, rsa_sign},
     { "rsa_verify", 4, rsa_verify},
+    { "rsa_public_crypt", 4, rsa_public_crypt },
+    { "rsa_private_crypt", 4, rsa_private_crypt },
 };
 
 static ERL_NIF_TERM sha1_init(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
@@ -357,6 +365,106 @@ static int get_bn_from_bin(ErlNifEnv* env, ERL_NIF_TERM term, BIGNUM** bnp)
     return 1;
 }
 
+static int rsa_pad(ERL_NIF_TERM term, int* padding)
+{
+    if (term == atom_rsa_pkcs1_padding) {
+        *padding = RSA_PKCS1_PADDING;
+    }
+    else if (term == atom_rsa_pkcs1_oaep_padding) {
+        *padding = RSA_PKCS1_OAEP_PADDING;
+    }
+    else if (term == atom_rsa_no_padding) {
+        *padding = RSA_NO_PADDING;
+    }
+    else {
+        return 0;
+    }
+    return 1;
+}
+
+static ERL_NIF_TERM rsa_public_crypt(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{/* (Data, PublKey=[E,N], Padding, IsEncrypt) */
+    ErlNifBinary data_bin, ret_bin;
+    ERL_NIF_TERM head, tail;
+    int padding, i;
+    RSA* rsa;
+
+    rsa = RSA_new();
+
+    if (!enif_inspect_binary(env, argv[0], &data_bin)
+            || !enif_get_list_cell(env, argv[1], &head, &tail)
+            || !get_bn_from_bin(env, head, &rsa->e)
+            || !enif_get_list_cell(env, tail, &head, &tail)
+            || !get_bn_from_bin(env, head, &rsa->n)
+            || !enif_is_empty_list(env,tail)
+            || !rsa_pad(argv[2], &padding)) {
+
+        RSA_free(rsa);
+        return enif_make_badarg(env);
+    }
+
+    enif_alloc_binary(RSA_size(rsa), &ret_bin);
+
+    if (argv[3] == atom_true) {
+        i = RSA_public_encrypt(data_bin.size, data_bin.data,
+                ret_bin.data, rsa, padding);
+    }
+    else {
+        i = RSA_public_decrypt(data_bin.size, data_bin.data,
+                ret_bin.data, rsa, padding);
+        if (i > 0) {
+            enif_realloc_binary(&ret_bin, i);
+        }
+    }
+    RSA_free(rsa);
+    if (i > 0) {
+        return enif_make_binary(env,&ret_bin);
+    }
+    else {
+        enif_release_binary(&ret_bin);
+        return atom_error;
+    }
+}
+
+static ERL_NIF_TERM rsa_private_crypt(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{/* (Data, Key=[E,N,D]|[E,N,D,P1,P2,E1,E2,C], Padding, IsEncrypt) */
+    ErlNifBinary data_bin, ret_bin;
+    int padding, i;
+    RSA* rsa;
+
+    rsa = RSA_new();
+
+    if (!enif_inspect_binary(env, argv[0], &data_bin)
+            || !get_rsa_private_key(env, argv[1], rsa)
+            || !rsa_pad(argv[2], &padding)) {
+
+        RSA_free(rsa);
+        return enif_make_badarg(env);
+    }
+
+    enif_alloc_binary(RSA_size(rsa), &ret_bin);
+
+    if (argv[3] == atom_true) {
+        i = RSA_private_encrypt(data_bin.size, data_bin.data,
+                ret_bin.data, rsa, padding);
+    }
+    else {
+        i = RSA_private_decrypt(data_bin.size, data_bin.data,
+                ret_bin.data, rsa, padding);
+        if (i > 0) {
+            enif_realloc_binary(&ret_bin, i);
+        }
+    }
+    RSA_free(rsa);
+    if (i > 0) {
+        return enif_make_binary(env,&ret_bin);
+    }
+    else {
+        enif_release_binary(&ret_bin);
+        return atom_error;
+    }
+}
+
 static void evp_md_destructor(ErlNifEnv* env, erl_evp_md_ctx_t* obj)
 {
     EVP_MD_CTX_destroy(obj->ctx);
@@ -374,6 +482,9 @@ static int init(ErlNifEnv* env, ERL_NIF_TERM load_info)
     atom_false  = enif_make_atom(env, "false");
     atom_sha256 = enif_make_atom(env, "sha256");
     atom_sha512 = enif_make_atom(env, "sha512");
+    atom_rsa_pkcs1_padding = enif_make_atom(env,"rsa_pkcs1_padding");
+    atom_rsa_pkcs1_oaep_padding = enif_make_atom(env,"rsa_pkcs1_oaep_padding");
+    atom_rsa_no_padding = enif_make_atom(env,"rsa_no_padding");
 
     /*
      * Initialize resource types
