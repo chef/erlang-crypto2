@@ -24,10 +24,14 @@
 %% API functions
 %%====================================================================
 
+hash(md5, Data) ->
+    erlang:md5(Data);
 hash(Type, Data) ->
     Context = hash_update(hash_init(Type), Data),
     hash_final(Context).
 
+hash_init(md5) ->
+    {md5_bif, erlang:md5_init()};
 hash_init(sha) ->
     sha1_init();
 hash_init(sha256) ->
@@ -35,8 +39,15 @@ hash_init(sha256) ->
 hash_init(sha512) ->
     sha512_init().
 
-hash_update(_Context, _Data) -> "Undefined".
-hash_final(_Context) -> "Undefined".
+hash_update({md5_bif, Context}, Data) ->
+    {md5_bif, erlang:md5_update(Context, Data)};
+hash_update(Context, Data) -> 
+    hash_update_nif(Context, Data).
+
+hash_final({md5_bif, Context}) ->
+    erlang:md5_final(Context);
+hash_final(Context) ->
+    hash_final_nif(Context).
 
 public_encrypt(rsa, BinMesg, Key, Padding) ->
     case rsa_public_crypt(BinMesg,  map_ensure_int_as_bin(Key), Padding, true) of
@@ -126,6 +137,8 @@ map_ensure_int_as_bin(List) ->
 sha1_init() -> "Undefined".
 sha256_init() -> "Undefined".
 sha512_init() -> "Undefined".
+hash_update_nif(_,_) -> "Undefined".
+hash_final_nif(_) -> "Undefined".
 rand_bytes_nif(_NumBytes) -> "Undefined".
 rsa_sign(_,_,_) -> "Undefined".
 rsa_verify(_,_,_,_) -> "Undefined".
