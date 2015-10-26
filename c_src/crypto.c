@@ -21,6 +21,7 @@ static void print_ssl_error(const char* msg) {
 static ERL_NIF_TERM atom_error;
 static ERL_NIF_TERM atom_true;
 static ERL_NIF_TERM atom_false;
+static ERL_NIF_TERM atom_sha;
 static ERL_NIF_TERM atom_sha256;
 static ERL_NIF_TERM atom_sha512;
 static ERL_NIF_TERM atom_rsa_no_padding;
@@ -301,7 +302,12 @@ static ERL_NIF_TERM rsa_verify(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv
 
 static int get_atom_nid(ERL_NIF_TERM term)
 {
-    if (term == atom_sha256) {
+    if (term == atom_sha) {
+        // This is not an allowed configuration in the fips
+        // spec. We probably want to not allow this once
+        // we have our v3 signing algorithm
+        return NID_sha1;
+    } if (term == atom_sha256) {
         return NID_sha256;
     } else if(term == atom_sha512) {
         return NID_sha512;
@@ -480,6 +486,7 @@ static int init(ErlNifEnv* env, ERL_NIF_TERM load_info)
     atom_error  = enif_make_atom(env, "error");
     atom_true   = enif_make_atom(env, "true");
     atom_false  = enif_make_atom(env, "false");
+    atom_sha = enif_make_atom(env, "sha");
     atom_sha256 = enif_make_atom(env, "sha256");
     atom_sha512 = enif_make_atom(env, "sha512");
     atom_rsa_pkcs1_padding = enif_make_atom(env,"rsa_pkcs1_padding");
