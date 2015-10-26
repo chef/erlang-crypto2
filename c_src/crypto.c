@@ -490,7 +490,7 @@ static int init(ErlNifEnv* env, ERL_NIF_TERM load_info)
      * Initialize resource types
      */
     erlrt_evp_md_ctx = enif_open_resource_type(
-        env, "crypto2",
+        env, "crypto",
         "erlrt_evp_md_ctx",
         (ErlNifResourceDtor*)evp_md_destructor,
         ERL_NIF_RT_CREATE,
@@ -531,4 +531,4 @@ static int load(ErlNifEnv* env, void** priv_data, ERL_NIF_TERM load_info)
     return 0;
 }
 
-ERL_NIF_INIT(crypto2, nif_funcs, load, NULL, NULL, NULL)
+ERL_NIF_INIT(crypto, nif_funcs, load, NULL, NULL, NULL)

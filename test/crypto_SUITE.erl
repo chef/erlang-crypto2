@@ -18,7 +18,7 @@
 %% %CopyrightEnd%
 %%
 
--module(crypto2_SUITE).
+-module(crypto_SUITE).
 -include_lib("common_test/include/ct.hrl").
 -compile(export_all).
 
@@ -133,26 +133,26 @@ mkint(C) when $a =< C, C =< $f ->
 hash(_, [], []) ->
     ok;
 hash(Type, [Msg | RestMsg], [Digest| RestDigest]) ->
-    case crypto2:hash(Type, Msg) of
+    case crypto:hash(Type, Msg) of
 	Digest ->
 	    hash(Type, RestMsg, RestDigest);
 	Other ->
-	    ct:fail({{crypto2, hash, [Type, Msg]}, {expected, Digest}, {got, Other}})
+	    ct:fail({{crypto, hash, [Type, Msg]}, {expected, Digest}, {got, Other}})
     end.
 
 hash_increment(Type, Increments, Digest) ->
-    State = crypto2:hash_init(Type),
+    State = crypto:hash_init(Type),
     case hash_increment(State, Increments) of
 	Digest ->
 	    ok;
 	Other ->
-	    ct:fail({{crypto2, "hash_init/update/final", [Type, Increments]}, {expected, Digest}, {got, Other}})  
+	    ct:fail({{crypto, "hash_init/update/final", [Type, Increments]}, {expected, Digest}, {got, Other}})  
     end.
 
 hash_increment(State, []) ->
-    crypto2:hash_final(State);
+    crypto:hash_final(State);
 hash_increment(State0, [Increment | Rest]) ->
-    State = crypto2:hash_update(State0, Increment),
+    State = crypto:hash_update(State0, Increment),
     hash_increment(State, Rest).
 
 iolistify(<<"Test With Truncation">>)->
@@ -223,8 +223,8 @@ long_sha512_digest() ->
 	       "de0ff244877ea60a" "4cb0432ce577c31b" "eb009c5c2c49aa2e" "4eadb217ad8cc09b").
 
 rand_bytes(_Config) ->
-    10 = byte_size(crypto2:rand_bytes(10)),
-    20 = byte_size(crypto2:strong_rand_bytes(20)).
+    10 = byte_size(crypto:rand_bytes(10)),
+    20 = byte_size(crypto:strong_rand_bytes(20)).
 
 rsa_plain() ->
     <<"7896345786348756234 Hejsan Svejsan, erlang crypto debugger"
@@ -245,8 +245,8 @@ sign_verify_tests(Type, Hashs, Msg, Public, Private) ->
                 end, [], Hashs).
 
 do_sign_verify({Type, Hash, Public, Private, Msg}) ->
-    Signature = crypto2:sign(Type, Hash, Msg, Private),
-    case crypto2:verify(Type, Hash, Msg, Signature, Public) of
+    Signature = crypto:sign(Type, Hash, Msg, Private),
+    case crypto:verify(Type, Hash, Msg, Signature, Public) of
         true ->
             negative_verify(Type, Hash, Msg, <<10,20>>, Public);
         false ->
@@ -254,7 +254,7 @@ do_sign_verify({Type, Hash, Public, Private, Msg}) ->
     end.
 
 negative_verify(Type, Hash, Msg, Signature, Public) ->
-    case crypto2:verify(Type, Hash, Msg, Signature, Public) of
+    case crypto:verify(Type, Hash, Msg, Signature, Public) of
         true ->
             ct:fail({{crypto, verify, [Type, Hash, Msg, Signature, Public]}, should_fail});
         false ->
@@ -262,8 +262,8 @@ negative_verify(Type, Hash, Msg, Signature, Public) ->
     end.
 
 do_public_encrypt({Type, Public, Private, Msg, Padding}) ->
-    PublicEcn = (catch crypto2:public_encrypt(Type, Msg, Public, Padding)),
-    case crypto2:private_decrypt(Type, PublicEcn, Private, Padding) of
+    PublicEcn = (catch crypto:public_encrypt(Type, Msg, Public, Padding)),
+    case crypto:private_decrypt(Type, PublicEcn, Private, Padding) of
         Msg ->
             ok;
         Other ->
@@ -271,8 +271,8 @@ do_public_encrypt({Type, Public, Private, Msg, Padding}) ->
     end.
 
 do_private_encrypt({Type, Public, Private, Msg, Padding}) ->
-    PrivEcn = (catch crypto2:private_encrypt(Type, Msg, Private, Padding)),
-    case crypto2:public_decrypt(rsa, PrivEcn, Public, Padding) of
+    PrivEcn = (catch crypto:private_encrypt(Type, Msg, Private, Padding)),
+    case crypto:public_decrypt(rsa, PrivEcn, Public, Padding) of
         Msg ->
             ok;
         Other ->

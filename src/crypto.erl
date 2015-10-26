@@ -1,7 +1,7 @@
 %%% Add erlang apache license here as a lot of this code
 %%% is copy pasta
 
--module('crypto2').
+-module('crypto').
 -on_load(on_load/0).
 
 %% API exports
@@ -107,9 +107,9 @@ verify(rsa, DigestType, Msg, Signature, Key) ->
 %%====================================================================
 
 on_load() ->
-  case code:priv_dir(crypto2) of
+  case code:priv_dir(crypto) of
     Path when is_list(Path) ->
-      erlang:load_nif(filename:join(Path, "crypto2"), []);
+      erlang:load_nif(filename:join(Path, "crypto"), []);
     _ ->
       {error, "Could not find library"}
   end.
