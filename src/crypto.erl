@@ -10,6 +10,7 @@
          hash_init/1,
          hash_update/2,
          hash_final/1,
+         hmac/3,
          public_encrypt/4,
          private_decrypt/4,
          private_encrypt/4,
@@ -48,6 +49,9 @@ hash_final({md5_bif, Context}) ->
     erlang:md5_final(Context);
 hash_final(Context) ->
     hash_final_nif(Context).
+
+hmac(sha, Key, Data) ->
+    hmac_sha1_nif(Key, Data).
 
 public_encrypt(rsa, BinMesg, Key, Padding) ->
     case rsa_public_crypt(BinMesg,  map_ensure_int_as_bin(Key), Padding, true) of
@@ -139,6 +143,7 @@ sha256_init() -> "Undefined".
 sha512_init() -> "Undefined".
 hash_update_nif(_,_) -> "Undefined".
 hash_final_nif(_) -> "Undefined".
+hmac_sha1_nif(_,_) -> "Undefined".
 rand_bytes_nif(_NumBytes) -> "Undefined".
 rsa_sign(_,_,_) -> "Undefined".
 rsa_verify(_,_,_,_) -> "Undefined".

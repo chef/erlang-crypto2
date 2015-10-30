@@ -31,7 +31,7 @@ all() -> [{group, md5},
          ].
 
 groups() -> [{md5, [], [hash]},
-             {sha, [], [hash]},
+             {sha, [], [hash, hmac]},
              {sha256, [], [hash]},
              {sha512, [], [hash]},
              {rsa, [], [sign_verify, public_encrypt]}
@@ -48,6 +48,14 @@ hash(Config) when is_list(Config) ->
     hash(Type, Msgs, Digests),
     hash(Type, lists:map(fun iolistify/1, Msgs), Digests),
     hash_increment(Type, Inc, IncrDigest).
+
+hmac() ->
+     [{doc, "Test all different hmac functions"}].
+hmac(Config) when is_list(Config) ->
+    {Type, Keys, DataLE, Expected} = proplists:get_value(hmac, Config),
+    Data = lazy_eval(DataLE),
+    hmac(Type, Keys, Data, Expected),
+    hmac(Type, lists:map(fun iolistify/1, Keys), lists:map(fun iolistify/1, Data), Expected).
 
 public_encrypt() ->
      [{doc, "Test public_encrypt/decrypt and private_encrypt/decrypt functions. "}].
@@ -94,7 +102,10 @@ group_config(md5 = Type, Config) ->
 group_config(sha = Type, Config) ->
     Msgs = [rfc_4634_test1(), rfc_4634_test2_1(),long_msg()],
     Digests = rfc_4634_sha_digests() ++ [long_sha_digest()],
-    [{hash, {Type, Msgs, Digests}} | Config];
+    Keys = rfc_2202_sha_keys() ++ [long_hmac_key(sha)],
+    Data = rfc_2202_msgs() ++ [long_msg()],
+    Hmac = rfc_2202_hmac_sha()  ++ [long_hmac(sha)],
+    [{hash, {Type, Msgs, Digests}}, {hmac, {Type, Keys, Data, Hmac}} | Config];
 group_config(sha256 = Type, Config) ->
     Msgs =   [rfc_4634_test1(), rfc_4634_test2_1(), long_msg()],
     Digests = rfc_4634_sha256_digests() ++ [long_sha256_digest()],
@@ -154,6 +165,17 @@ hash_increment(State, []) ->
 hash_increment(State0, [Increment | Rest]) ->
     State = crypto:hash_update(State0, Increment),
     hash_increment(State, Rest).
+
+hmac(_, [],[],[]) ->
+    ok;
+hmac(Type, [Key | Keys], [Data| Rest], [Expected | Expects]) ->
+    case crypto:hmac(Type, Key, Data) of
+        Expected ->
+            ok;
+        Other ->
+            ct:fail({{crypto, hmac, [Type, Key, Data]}, {expected, Expected}, {got, Other}})
+    end,
+    hmac(Type, Keys, Rest, Expects).
 
 iolistify(<<"Test With Truncation">>)->
     %% Do not iolistify as it spoils this special case
@@ -317,3 +339,39 @@ rfc_1321_md5_digests() ->
      hexstr2bin("c3fcd3d76192e4007dfb496cca67e13b"),
      hexstr2bin("d174ab98d277d9f5a5611c2c9f419d9f"),
      hexstr2bin("57edf4a22be3c955ac49da2e2107b67a")].
+
+rfc_2202_sha_keys() ->
+    [binary:copy(<<16#0b>>, 20),
+     <<"Jefe">>,
+     binary:copy(<<16#aa>>, 20),
+     list_to_binary(lists:seq(1, 16#19)),
+     binary:copy(<<16#aa>>, 80),
+     binary:copy(<<16#aa>>, 80)].
+
+rfc_2202_msgs()->
+    [<<"Hi There">>,
+     <<"what do ya want for nothing?">>,
+     binary:copy(<<16#dd>>, 50),
+     binary:copy(<<16#cd>>, 50),
+     <<"Test Using Larger Than Block-Size Key - Hash Key First">>,
+     <<"Test Using Larger Than Block-Size Key and Larger Than One Block-Size Data">>
+    ].
+
+rfc_2202_hmac_sha() ->
+    [
+     hexstr2bin("b617318655057264e28bc0b6fb378c8ef146be00"),
+     hexstr2bin("effcdf6ae5eb2fa2d27416d5f184df9c259a7c79"),
+     hexstr2bin("125d7342b9ac11cd91a39af48aa17b4f63f175d3"),
+     hexstr2bin("4c9007f4026250c6bc8414f9bf50c86c2d7235da"),
+     hexstr2bin("aa4ae5e15272d00e95705637ce8a3b55ed402112"),
+     hexstr2bin("e8e99d0f45237d786d6bbaa7965c7808bbff1a91")
+    ].
+
+long_hmac_key(_) ->
+    hexstr2bin("0123456789ABCDEF0123456789ABCDEF"
+               "0123456789ABCDEF0123456789ABCDEF"
+               "0123456789ABCDEF0123456789ABCDEF"
+               "0123456789ABCDEF0123456789ABCDEF").
+
+long_hmac(sha) ->
+    hexstr2bin("61D1D0B6459860755FDA892938C23DD401E54A7E").
