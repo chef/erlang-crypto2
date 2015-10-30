@@ -6,6 +6,7 @@
 
 %% API exports
 -export([
+         supports/0,
          hash/2,
          hash_init/1,
          hash_update/2,
@@ -24,6 +25,12 @@
 %%====================================================================
 %% API functions
 %%====================================================================
+
+supports() ->
+    [{hashs, [sha, sha256, sha512]},
+     {ciphers, []},
+     {public_keys, [rsa]}
+    ].
 
 hash(md5, Data) ->
     erlang:md5(Data);
