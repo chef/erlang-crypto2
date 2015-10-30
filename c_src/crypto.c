@@ -3,6 +3,7 @@
 #include <openssl/evp.h>
 #include <openssl/rand.h>
 #include <openssl/rsa.h>
+#include <openssl/hmac.h>
 #include <openssl/err.h>
 #include "crypto_callback.h"
 #include "erl_nif.h"
@@ -48,6 +49,7 @@ static ERL_NIF_TERM rsa_sign(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]
 static ERL_NIF_TERM rsa_verify(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]);
 static ERL_NIF_TERM rsa_public_crypt(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]);
 static ERL_NIF_TERM rsa_private_crypt(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]);
+static ERL_NIF_TERM hmac_sha1(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]);
 
 // Helpers
 static ERL_NIF_TERM evp_md_init(ErlNifEnv* env, const EVP_MD* md);
@@ -71,6 +73,7 @@ static ErlNifFunc nif_funcs[] = {
     { "rsa_verify", 4, rsa_verify},
     { "rsa_public_crypt", 4, rsa_public_crypt },
     { "rsa_private_crypt", 4, rsa_private_crypt },
+    { "hmac_sha1_nif", 2, hmac_sha1},
 };
 
 static ERL_NIF_TERM sha1_init(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
@@ -469,6 +472,27 @@ static ERL_NIF_TERM rsa_private_crypt(ErlNifEnv* env, int argc, const ERL_NIF_TE
         enif_release_binary(&ret_bin);
         return atom_error;
     }
+}
+
+static ERL_NIF_TERM hmac_sha1(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    ErlNifBinary key_bin;
+    ErlNifBinary data_bin;
+    ErlNifBinary mac_bin;
+
+    if (!enif_inspect_iolist_as_binary(env, argv[0], &key_bin)) {
+        return enif_make_badarg(env);
+    }
+
+    if (!enif_inspect_iolist_as_binary(env, argv[1], &data_bin)) {
+        return enif_make_badarg(env);
+    }
+
+    enif_alloc_binary(SHA_DIGEST_LENGTH, &mac_bin);
+
+    HMAC(EVP_sha1(), key_bin.data, key_bin.size, data_bin.data, data_bin.size, mac_bin.data, NULL);
+
+    return enif_make_binary(env, &mac_bin);
 }
 
 static void evp_md_destructor(ErlNifEnv* env, erl_evp_md_ctx_t* obj)
