@@ -1,6 +1,6 @@
 {application, 'crypto',
  [{description, "An OTP library"},
-  {vsn, "0.1.0"},
+  {vsn, "100.0.0"},
   {registered, []},
   {applications,
    [kernel,
