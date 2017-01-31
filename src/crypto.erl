@@ -49,7 +49,7 @@ hash_init(sha512) ->
 
 hash_update({md5_bif, Context}, Data) ->
     {md5_bif, erlang:md5_update(Context, Data)};
-hash_update(Context, Data) -> 
+hash_update(Context, Data) ->
     hash_update_nif(Context, Data).
 
 hash_final({md5_bif, Context}) ->
@@ -118,7 +118,7 @@ verify(rsa, DigestType, Msg, Signature, Key) ->
 %%====================================================================
 
 on_load() ->
-  case code:priv_dir(crypto) of
+  case code:priv_dir(fips_crypto) of
     Path when is_list(Path) ->
       erlang:load_nif(filename:join(Path, "crypto"), []);
     _ ->
