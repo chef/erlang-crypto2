@@ -118,12 +118,13 @@ verify(rsa, DigestType, Msg, Signature, Key) ->
 %%====================================================================
 
 on_load() ->
-  case code:priv_dir(fips_crypto) of
-    Path when is_list(Path) ->
-      erlang:load_nif(filename:join(Path, "crypto"), []);
-    _ ->
-      {error, "Could not find library"}
-  end.
+    erlang:load_nif(filename:join("/opt/crypto2/embedded/lib/erlang-crypto2/priv", "crypto"), []).
+  % case code:priv_dir(fips_crypto) of
+  %   Path when is_list(Path) ->
+  %     erlang:load_nif(filename:join("/opt/crypto2/embedded/lib/erlang-crypto2/priv", "crypto"), []);
+  %   _ ->
+  %     {error, "Could not find library"}
+  % end.
 
 %%%%%%%%%%%%%%%%%%%%%%% from crypto.erl %%%%%%%%%%%%%%%%%%%%%%
 int_to_bin(X) when X < 0 -> int_to_bin_neg(X, []);
