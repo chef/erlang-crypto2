@@ -1,5 +1,5 @@
 {application, 'fips_crypto',
- [{description, "An OTP library"},
+ [{description, "FIPS overrides for the crypto module"},
   {vsn, "100.0.0"},
   {registered, []},
   {applications,
